@@ -1,51 +1,89 @@
 <% layout('/layout/page') -%>
-
-<table>
-  <tr>
-    <th>Name</th>
-    <th>Capacity</th>
-    <th>Delete</th>
-  </tr>
-<% for(var i=0; i<car.array_to_json.length; i++) {%>
-	<tr>
-		<th><%= car.array_to_json[i].name%></th>
-		<th><%= car.array_to_json[i].capacity%></th>
-		<th>
-			<form id="form" action="">
-				<button id="<%= car.array_to_json[i].id%>" onclick="console.log(<%= car.array_to_json[i].id%>)">Delete</button>
-			</form>
-			<script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
-			<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
-			<script>
-			  var socket = io();
-			  $('#form').submit(function(){
-			    socket.emit('chat message' + "<%= car.array_to_json[i].id%>", "<%= car.array_to_json[i].id%>");
-			    return false;
-			  });
-			  socket.on('chat message', function(msg){
-			    $('#messages').append($('<li>').text(msg));
-			  });
-			</script>
-		</th>
-	</tr>
-<% } %>
-</table>
-
-
-<ul id="messages"></ul>
-<form action="">
-  <input id="m" autocomplete="off" /><button>Send</button>
-</form>
 <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
 <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+<table id="tableCar" class="table table-striped table-hover">
+	<thead>
+	  <tr>
+	    <th>Name</th>
+	    <th>Capacity</th>
+	    <th>Delete</th>
+	  </tr>
+	</thead>
+	<tbody>
+		<% var length = car.array_to_json == null ? 0 : car.array_to_json.length;%>
+		<% var cars = car.array_to_json;%>
+		<% for(var i = 0; i < length; i++) {%>
+			<tr>
+				<th><%= cars[i].name%></th>
+				<th><%= cars[i].capacity%></th>
+				<th>
+					<form id="form<%= cars[i].id%>" action="">
+						<button id="<%= i%>" onclick="" class="btn btn-default">Delete</button>
+					</form>
+					<script>
+						var socket = io();
+					  $('#form<%= cars[i].id%>').submit(function(){
+					    socket.emit('chat message', '<%= cars[i].id%>');
+					    var str = '#form' + msg;
+					    var form = $(str);
+					    if (form.get(0)) {
+					    	$(str).parent().parent().parent().get(0).removeChild($(str).parent().parent().get(0));
+					    }
+					    return false;
+					  });
+					</script>
+				</th>
+			</tr>
+		<% } %>
+	</tbody>
+</table>
+<form id="addNewCar">
+	<div class="col-sm-2"></div>
+	<div class="col-sm-8">
+		<label for="nameCar">Name car</label>
+		<input id="nameCar" autocomplete="off" placeholder="Name..." class="form-control">
+		<label for="capacityCar">Capacity car</label>
+		<input id="capacityCar" autocomplete="off" placeholder="Capacity..." class="form-control">
+		<button class="btn btn-info btn-block">Add new car</button>
+	</div>
+	<div class="col-sm-2"></div>
+</form>
+
 <script>
   var socket = io();
-  $('form').submit(function(){
-    socket.emit('chat message', $('#m').val());
-    $('#m').val('');
-    return false;
-  });
-  socket.on('chat message', function(msg){
-    $('#messages').append($('<li>').text(msg));
+  var form = $('#addNewCar');
+  form.submit(function() {
+  	var name = $('#nameCar');
+  	var capacity = $('#capacityCar');
+  	if (name.val() == '') {
+  		alert('Введите name');
+  	} else if (capacity.val() == '') {
+  		alert('Введите capacity');
+  	}
+		console.log("sdfdds");
+		var car = {
+  		name: name.val(),
+  		capacity: capacity.val(),
+  	};
+  	socket.emit('addCar', car);
+  	socket.on('addCar', function(id){
+  		if (!($("#form" + id).parents("#tableCar").length)) {
+  			var tableCar = $('#tableCar tbody').get(0);
+	  		var tr = document.createElement('tr');
+	  		var thName = document.createElement('th');
+	  		var thCap = document.createElement('th');
+	  		var thDel = document.createElement('th');
+	  		thName.innerHTML = name.val();
+	  		thCap.innerHTML = capacity.val();
+	  		thDel.innerHTML = "<form id='form" + id + "'><button class='btn btn-default'>Delete</button></form>";
+	  		tr.appendChild(thName);
+	  		tr.appendChild(thCap);
+	  		tr.appendChild(thDel);
+	  		tableCar.appendChild(tr);
+	  		name.val('');
+	  		capacity.val('');
+  		}
+		});
+  	return false;
   });
 </script>
